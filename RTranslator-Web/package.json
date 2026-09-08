@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@browsermt/bergamot-translator": "^0.4.9",
+    "@zip.js/zip.js": "^2.11.4",
+    "fast-xml-parser": "^5.11.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
