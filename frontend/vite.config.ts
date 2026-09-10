@@ -11,9 +11,19 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Ensure these match your actual folder structure relative to vite.config.ts
+      // Ensure these match our actual folder structure relative to vite.config.ts
       '@components': path.resolve(__dirname, './src/components'),
       '@src': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    proxy: {
+      // Whenever Vite sees a request starting with /api, 
+      // it forwards it to the Node backend (only for development)
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 })

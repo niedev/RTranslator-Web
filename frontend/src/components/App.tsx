@@ -63,12 +63,13 @@ function App() {
                onDownloadPressed={async (lang) => {
                   try {
                      await global.downloadModel(lang);
-                  } catch (e) {
+                  } catch (e: any) {
                      if (e instanceof DOMException && e.name == "AbortError") {
                         //the user interrupted the download, we do nothing for now
                         console.log("Aborted download");
                      } else {
                         //we notify an unexpected error
+                        console.log(e)
                      }
                   }
                }}

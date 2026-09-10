@@ -74,7 +74,9 @@ export class Global {
         let languagesInfos = await this.processLanguages();
         let mozillaFolder = await this.getMozillaFolder();
         let modelsDirs = await listDirectoryChildrenReady(mozillaFolder);
-        let baseUrl = "https://github.com/niedev/OnnxModelsEnhancer/releases/download/v1.0.0-beta/";
+        // If the env variable exists, use it (GitHub Pages). 
+        // Otherwise, default to the relative path (Self-hosted Docker).
+        const baseUrl = import.meta.env.VITE_DOWNLOAD_BASE_URL ?? '/api/downloads/';
         this.mozillaModels = languagesInfos.map((item) => {
             let fileName = "Mozilla_" + item.lang + ".zip";
             if (modelsDirs.find((value) => value.name == item.lang)) {

@@ -34,9 +34,7 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
       // If the click is outside the bounding box, it hit the backdrop
       if (!clickedInside) {
          dialogElement.close();
-         // If you unmount the dialog from the parent component, 
-         // make sure to call your onClose prop here instead/as well:
-         // onClose(); 
+         // todo: check if in this case the onClose of the dialog is called, if not call onClose() here
       }
    };
 

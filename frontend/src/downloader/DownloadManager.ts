@@ -118,17 +118,22 @@ export class DownloadManager {
                 // Check if aborted before processing the next file
                 if (signal.aborted) throw new DOMException('Aborted by user', 'AbortError');
 
-                if (entry.directory) {
-                    await targetDirHandle.getDirectoryHandle(entry.filename, { create: true });
-                    continue;
-                }
+                // Clean and split path, filtering out empty segments and dangerous relative parts
+                const pathParts = entry.filename.split('/').filter(part => part.length > 0 && part !== '.' && part !== '..');
+                
+                if (pathParts.length === 0) continue; // Skip invalid or root entries
 
-                const pathParts = entry.filename.split('/');
                 const fileName = pathParts.pop()!;
                 let currentDir = targetDirHandle;
 
+                // Traverse or create nested directories safely
                 for (const part of pathParts) {
                     currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+                }
+
+                if (entry.directory) {
+                    // If it was explicitly marked as a directory and created via loop, skip file creation
+                    continue;
                 }
 
                 const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
@@ -215,6 +220,11 @@ class OPFSWriter implements Writer<void> {
     }
 
     async getData() {
-        await this.writable.close();
+        try {
+            // Safely close only if it hasn't already been finalized/closed
+            await this.writable.close();
+        } catch {
+            // Suppress error if the stream is already closed or locked
+        }
     }
 }
