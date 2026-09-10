@@ -6,14 +6,23 @@ import { listDirectoryChildren, listDirectoryChildrenReady } from "./file-system
 import mozillaLanguagesXml from './assets/languages/mozilla_supported_languages.xml?raw';
 
 export class Global {
+    private initialized: boolean;
     private mozillaFolder?: Promise<FileSystemDirectoryHandle>;
     private translator: Translator;
     private downloadManager: DownloadManager;
     private mozillaModels: DownloadInfo[];
     private selectedFirstLanguage: string | null;
     private selectedSecondLanguage: string | null;
+    private state: State = {
+        isInitialized: false,
+        mozillaModels: [],
+        firstLanguage: null,
+        secondLanguage: null
+    };
+    private listeners = new Set<() => void>();
 
     constructor() {
+        this.initialized = false;
         this.mozillaFolder = undefined;
         this.getMozillaFolder();
         this.translator = new Translator();
@@ -22,6 +31,43 @@ export class Global {
         this.selectedFirstLanguage = null;
         this.selectedSecondLanguage = null;
     }
+
+    /* ==========================================
+    *  STATE INTERFACE
+    *  Interface to make React (via useSyncExternalStore) or other external systems update the state according to the attributes of this object
+    * ========================================== */
+
+    public subscribe = (listener: () => void) => {
+        this.listeners.add(listener);
+        return () => this.listeners.delete(listener);
+    };
+
+    public getSnapshot = () => {
+        return this.state;
+    };
+
+    // Helper to update state immutably and notify React (or other systems).
+    // With React Compiler, if one of the properties of the object stays the same between renders
+    // a component that has that property as a prop arg could not re render.
+    // So given that mozillaModels is the only non primitive attribute, there is the mozillaModelsChanged
+    // param to force the mozillaModels change in the case there has been updates on the internals of this obj.
+    // The same principle applies to the indexChanged internal DownloadInfo object.
+    private updateState(mozillaModelsChanged = false, indexChanged = -1) {
+        let mozillaModelsCopy = mozillaModelsChanged ? [...this.mozillaModels] : this.mozillaModels;
+        if(indexChanged >= 0 && indexChanged < mozillaModelsCopy.length){
+            mozillaModelsCopy[indexChanged] = Object.assign({}, mozillaModelsCopy[indexChanged])  // clone the object at index: indexChanged
+        }
+        mozillaModelsCopy
+        this.state = {
+            isInitialized: this.initialized,
+            mozillaModels: mozillaModelsCopy,
+            firstLanguage: this.selectedFirstLanguage,
+            secondLanguage: this.selectedSecondLanguage,
+        }
+        this.listeners.forEach(listener => listener());
+    }
+
+    /* ========================================== */
 
     public async init(): Promise<void> {
         // initialization of the mozillaModels
@@ -60,6 +106,9 @@ export class Global {
         let secondLang = this.getSecondLanguage();
         await this.translator.loadLanguagePairResources(firstLang, secondLang);
         //todo: do cleanup of all the folders that have an interrupted download (the ones in Tramslation/Mozilla/ that not contain .ready file)
+        this.initialized = true;
+        this.updateState(true);
+
     }
 
     public getMozillaModels() {
@@ -96,6 +145,7 @@ export class Global {
         if (changed) {
             this.selectedFirstLanguage = language;
             localStorage.setItem("firstTextLanguage", language);
+            this.updateState();
         }
 
         return language;
@@ -127,23 +177,28 @@ export class Global {
         if (changed) {
             this.selectedSecondLanguage = language;
             localStorage.setItem("secondTextLanguage", language);
+            this.updateState();
         }
 
         return language;
     }
 
-    public setFirstLanguage(lang: string) {
+    public setFirstLanguage(lang: string): string {
         this.selectedFirstLanguage = lang;
         let firstLanguage = this.getFirstLanguage();
         localStorage.setItem("firstTextLanguage", firstLanguage);
         this.translator.loadLanguagePairResources(firstLanguage, this.getSecondLanguage());
+        this.updateState();
+        return firstLanguage;
     }
 
-    public setSecondLanguage(lang: string) {
+    public setSecondLanguage(lang: string): string {
         this.selectedSecondLanguage = lang;
         let secondLanguage = this.getSecondLanguage();
         localStorage.setItem("secondTextLanguage", secondLanguage);
         this.translator.loadLanguagePairResources(this.getFirstLanguage(), secondLanguage);
+        this.updateState();
+        return secondLanguage;
     }
 
     public async translate(text: string): Promise<string>  {
@@ -156,23 +211,27 @@ export class Global {
      * @returns An empty Promise that will be resolved when the download has been completed successfully.
      * @throws An error of type DOMException and name == "AbortError" if the download has been interrupted with cancelModelDownload, other errors if the download fails.
      */
-    public async downloadModel(lang: string): Promise<void> {
-        let modelDownload = this.getMozillaModels().find((item) => item.name == lang);
+    public async downloadModel(lang: string, onProgress?: (progress: number, isUnzipping: boolean) => void ): Promise<void> {
+        let modelDownloadIndex = this.getMozillaModels().findIndex((item) => item.name == lang);
+        let modelDownload = this.getMozillaModels()[modelDownloadIndex];
         if(modelDownload && !modelDownload.downloading && !modelDownload.downloadCompleted){
             try {
                 // start of the download
                 modelDownload.downloading = true;
+                this.updateState(true, modelDownloadIndex);
                 await this.downloadManager.downloadZip(modelDownload.url, await this.getMozillaFolder(), modelDownload.name, (loaded, total, isUnzipping) => {
                     // download status update
                     modelDownload.currentProgress = total/loaded * 100;
                     modelDownload.unzipping = isUnzipping;
+                    this.updateState(true, modelDownloadIndex);
                 });
                 // the download is completed successfully
                 modelDownload.downloadCompleted = true;
                 modelDownload.currentProgress = 100;
                 modelDownload.downloading = false;
                 modelDownload.unzipping = false;
-                this.translator.addModelToRegistery(modelDownload.name);
+                await this.translator.addModelToRegistery(modelDownload.name);
+                this.updateState(true, modelDownloadIndex);
             } catch (e) {
                 // the downloaded has been interrupted by the user or by an error, so we change its status accrodingly
                 // normally this update happens also in the cancelDownload, but here is necessary in the case the download
@@ -181,6 +240,7 @@ export class Global {
                 modelDownload.currentProgress = 0;
                 modelDownload.downloading = false;
                 modelDownload.unzipping = false;
+                this.updateState(true, modelDownloadIndex);
                 throw e;   //note that if "(e instanceof DOMException && e.name == "AbortError")"" it means that the download has been interrupted by the user
             }
         }
@@ -194,7 +254,8 @@ export class Global {
      * @returns An empty Promise that will be resolved when the cancel operation has been completed.
      */
     public async cancelModelDownload(lang: string): Promise<void> {
-        let modelDownload = this.getMozillaModels().find((item) => item.name == lang);
+        let modelDownloadIndex = this.getMozillaModels().findIndex((item) => item.name == lang);
+        let modelDownload = this.getMozillaModels()[modelDownloadIndex];
         if(modelDownload){
             await this.downloadManager.cancelDownload(await this.getMozillaFolder(), lang);
             // we update the status of the model
@@ -204,7 +265,8 @@ export class Global {
             modelDownload.currentProgress = 0;
             modelDownload.downloading = false;
             modelDownload.unzipping = false;
-            this.translator.removeModelFromRegistery(modelDownload.name)
+            await this.translator.removeModelFromRegistery(modelDownload.name);
+            this.updateState(true, modelDownloadIndex);
         }
     }
 
@@ -258,4 +320,11 @@ export class Global {
 interface LanguageInfo {
     lang: string;
     size: number;
+}
+
+export interface State {
+    isInitialized: boolean;
+    mozillaModels: DownloadInfo[];
+    firstLanguage: string | null;
+    secondLanguage: string | null;
 }

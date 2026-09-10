@@ -92,8 +92,10 @@ export class LanguageResourceManager extends TranslatorBacking {
 
         let mozillaFolder = await this.getMozillaFolder();
         let languageDir = await mozillaFolder.getDirectoryHandle(language, { create: false });
+        if((await listDirectoryChildren(languageDir)).find((item) => item.kind === "directory" && item.name === language)) languageDir = await languageDir.getDirectoryHandle(language, {create: false});  //todo: remove it after fixing the mozilla zips internal structures (for now this manages the double language folder)
         let modelDir = await languageDir.getDirectoryHandle(langs.from + langs.to);
         let modelFiles = await listDirectoryChildren(modelDir);
+        if (!modelFiles || modelFiles.length == 0) throw new Error("No models files found");
         let config: {
             [key:string]: string
         } = {}   //todo: improve the settings in RTranslator and insert those here.
@@ -104,7 +106,6 @@ export class LanguageResourceManager extends TranslatorBacking {
         let tgtVocab: ArrayBuffer|null= null;
         let lexShort: ArrayBuffer|null = null;
 
-        if (!modelFiles) throw new Error("No models files found");
         for (let file of modelFiles) {
             if (file.handle instanceof FileSystemFileHandle) {
                 if (file.name.includes("model")) {
