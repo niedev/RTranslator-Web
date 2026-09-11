@@ -59,7 +59,7 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
             <ul>
                {installedLanguages.map((item) => {
                   return (
-                     <li key={item.name}>
+                     <li key={item.name} className='list-element'>
                         <p onClick={() => onSelectedLanguage(item.name)}>{item.name}</p>
                         <p>{item.size / 1000} MB</p>
                         <button onClick={() => onCancelPressed(item.name)}>Delete</button>
@@ -75,7 +75,7 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
             <ul>
                {availableLanguages.map((item) => {
                   return (
-                     <li key={item.name}>
+                     <li key={item.name} className='list-element'>
                         <p>{item.name}</p>
                         {item.downloading ?
                            <>
