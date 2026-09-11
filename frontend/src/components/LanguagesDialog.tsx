@@ -1,5 +1,10 @@
 import type { DownloadInfo } from '@src/downloader/DownloadInfo'
 import React, { useEffect, useRef } from 'react'
+import './LanguagesDialog.css'
+import deleteIcon from '@src/assets/delete_icon.svg';
+import downloadIcon from '@src/assets/download_icon.svg';
+import { getLanguageName } from '@src/tools/language_tools';
+import CircularProgress from './tools/CircularProgress';
 
 interface Props {
    languages: DownloadInfo[];
@@ -52,49 +57,57 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
 
 
    return (
-      <dialog ref={dialogRef} id="my-dialog" onClose={onClose} onClick={handleBackdropClick}>
-         {installedLanguages.length > 0 &&
-            <>
-            <p>Installed</p>
-            <ul>
-               {installedLanguages.map((item) => {
-                  return (
-                     <li key={item.name} className='list-element'>
-                        <p onClick={() => onSelectedLanguage(item.name)}>{item.name}</p>
-                        <p>{item.size / 1000} MB</p>
-                        <button onClick={() => onCancelPressed(item.name)}>Delete</button>
-                     </li>
-                  )
-               })}
-            </ul>
-            </>
-         }
-         {availableLanguages.length > 0 &&
-            <>
-            <p>Available</p>
-            <ul>
-               {availableLanguages.map((item) => {
-                  return (
-                     <li key={item.name} className='list-element'>
-                        <p>{item.name}</p>
-                        {item.downloading ?
-                           <>
-                           <p>{item.unzipping ? "Unzipping..." : (item.currentProgress/100)*(item.size/1000) +" / "+ (item.size/1000)+" MB" }</p>
-                           <progress id="file" max={item.unzipping ? undefined : 100} value={item.unzipping ? undefined : item.currentProgress}/>
-                           <button onClick={() => onCancelPressed(item.name)}>Delete</button>
-                           </>
-                           :
-                           <>
-                           <p>{item.size / 1000} MB</p>
-                           <button onClick={() => onDownloadPressed(item.name)}>Download</button>
-                           </>
-                        }
-                     </li>
-                  )
-               })}
-            </ul>
-            </>
-         }
+      <dialog ref={dialogRef} id="languages-dialog" onClose={onClose} onClick={handleBackdropClick}>
+         <div className='dialog-content'>
+            {installedLanguages.length > 0 &&
+               <>
+               <p className='list-header'>Installed</p>
+               <ul className='list'>
+                  {installedLanguages.map((item) => {
+                     return (
+                        <li key={item.name} className='list-element'>
+                           <p className='lang-name' onClick={() => onSelectedLanguage(item.name)}>{getLanguageName(item.name) ?? item.name}</p>
+                           <p className='lang-size'>{Math.round(item.size / 1000)} MB</p>
+                           <button className='delete-button' onClick={() => onCancelPressed(item.name)}>
+                              <img src={deleteIcon} alt={"delete"+(getLanguageName(item.name) ?? item.name)+"language"} />
+                           </button>
+                        </li>
+                     )
+                  })}
+               </ul>
+               </>
+            }
+            {availableLanguages.length > 0 &&
+               <>
+               <p className='list-header'>Available</p>
+               <ul className='list'>
+                  {availableLanguages.map((item) => {
+                     return (
+                        <li key={item.name} className='list-element'>
+                           <p className='lang-name'>{getLanguageName(item.name) ?? item.name}</p>
+                           {item.downloading ?
+                                 <>
+                                 <p className='lang-size'>{item.unzipping ? "Unzipping..." : Math.round((item.currentProgress/100)*(item.size/1000)) +" / "+ Math.round(item.size/1000)+" MB" }</p>
+                                 <CircularProgress className='lang-progress' value={item.unzipping ? undefined : item.currentProgress} color='#388e3c' size={36} thickness={5}/>
+                                 <button className='delete-button' onClick={() => onCancelPressed(item.name)}>
+                                    <img src={deleteIcon} alt={"delete"+(getLanguageName(item.name) ?? item.name)+"language"} />
+                                 </button>
+                                 </>
+                              :
+                                 <>
+                                 <p className='lang-size'>{Math.round(item.size / 1000)} MB</p>
+                                 <button className='download-button' onClick={() => onDownloadPressed(item.name)}>
+                                    <img src={downloadIcon} alt={"download"+(getLanguageName(item.name) ?? item.name)+"language"} />
+                                 </button>
+                                 </>
+                           }
+                        </li>
+                     )
+                  })}
+               </ul>
+               </>
+            }
+         </div>
       </dialog>
    )
 }

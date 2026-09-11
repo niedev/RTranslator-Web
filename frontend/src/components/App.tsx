@@ -3,6 +3,7 @@ import './App.css'
 import { Global } from '@src/Global'
 import LanguagesDialog from './LanguagesDialog';
 import switchIcon from '@src/assets/invert_arrows.svg';
+import { getLanguageName } from '@src/tools/language_tools';
 
 function App() {
    type LanguageListType = "first" | "second" | "none";
@@ -58,25 +59,8 @@ function App() {
 
 
 
-   const browserLanguage = navigator.languages?.[0] || navigator.language || 'en';
-   const languageNames = new Intl.DisplayNames([browserLanguage], { type: 'language' });
-
    if (!state.isInitialized) {
       return <p>Loading...</p>
-   }
-
-   function getLanguageName(languageCode: string | undefined | null): string | undefined {
-      try {
-         let language = languageCode ? languageNames.of(languageCode) : undefined;
-         if (language) {
-            // Capitalize the first letter and keep the rest of the string intact
-            return language.charAt(0).toUpperCase() + language.slice(1);
-         } else {
-            return undefined;
-         }
-      } catch (e) {
-         return undefined;
-      }
    }
 
    return (

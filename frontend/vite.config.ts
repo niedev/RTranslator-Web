@@ -1,12 +1,14 @@
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import { defineConfig } from 'vite'
+import mkcert from 'vite-plugin-mkcert'
 import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    //mkcert(),
     babel({ presets: [reactCompilerPreset()] })
   ],
   resolve: {
@@ -17,6 +19,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     proxy: {
       // Whenever Vite sees a request starting with /api, 
       // it forwards it to the Node backend (only for development)
