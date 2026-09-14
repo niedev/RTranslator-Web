@@ -132,7 +132,7 @@ export class Global {
         // if the language is fetch from the attribute or the local storage we check if its model is installed
         if (language) {
             let installedMozillaModels = this.getInstalledMozillaModels();
-            if (!installedMozillaModels.find((value) => value.name === language)) {
+            if (language != "en" && !installedMozillaModels.find((value) => value.name === language)) {
                 language = null;
             }
         }
@@ -164,7 +164,7 @@ export class Global {
         // if the language is fetch from the attribute or the local storage we check if its model is installed
         if (language) {
             let installedMozillaModels = this.getInstalledMozillaModels();
-            if (!installedMozillaModels.find((value) => value.name === language)) {
+            if (language != "en" && !installedMozillaModels.find((value) => value.name === language)) {
                 language = null;
             }
         }
@@ -203,6 +203,18 @@ export class Global {
         return secondLanguage;
     }
 
+    public switchSelectedLanguages(): void {
+        let firstLanguage = this.getFirstLanguage();
+        let secondLanguage = this.getSecondLanguage();
+        localStorage.setItem("firstTextLanguage", secondLanguage);
+        localStorage.setItem("secondTextLanguage", firstLanguage);
+        this.selectedFirstLanguage = secondLanguage;
+        this.selectedSecondLanguage = firstLanguage;
+        //loadLanguagePairResources normally wouldn't change nothing in this case, it does only in the case getFirstLanguage() or getSecondLanguage() change the language.
+        this.translator.loadLanguagePairResources(this.selectedFirstLanguage, this.selectedSecondLanguage);
+        this.updateState();
+    }
+
     public async translate(text: string): Promise<string>  {
         return this.translator.translate(text, this.getFirstLanguage(), this.getSecondLanguage());
     }
@@ -223,7 +235,7 @@ export class Global {
                 this.updateState(true, modelDownloadIndex);
                 await this.downloadManager.downloadZip(modelDownload.url, await this.getMozillaFolder(), modelDownload.name, (loaded, total, isUnzipping) => {
                     // download status update
-                    modelDownload.currentProgress = total/loaded * 100;
+                    modelDownload.currentProgress = loaded/total * 100;
                     modelDownload.unzipping = isUnzipping;
                     this.updateState(true, modelDownloadIndex);
                 });

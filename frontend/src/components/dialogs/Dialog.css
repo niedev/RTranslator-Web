@@ -1,0 +1,157 @@
+/* General */
+
+:root {
+    /* colors */
+    --primary: #43a047;
+    --primary_very_dark: #296B2C;
+    --primary_lite: #66bb6a;
+    --text-color: #5A5A5A;
+    --text-color-darker: #404040;
+    /* margins */
+    --confirm-btn-margin: 16px
+}
+
+.dialog {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    padding: 0;
+}
+
+.dialog:open::backdrop {
+  background-color: rgb(0 0 0 / 30%);
+}
+
+.dialog-content {
+    max-height: calc(100dvh - 40px);
+    width: 100%;
+    overflow-y: auto;
+    padding: 8px;
+    scrollbar-color: #e0e0e0 #FFFFFF;
+    scrollbar-width: thin;
+}
+
+/* LanguagesDialog */
+
+#dialog-languages {
+    width: 500px;
+    max-height: calc(100dvh - 40px);
+}
+
+.list {
+    list-style-type: none;
+    padding: 0;
+    margin-bottom: 32px;
+}
+
+.list-element {
+    display: flex;
+    flex-direction: row;
+    min-width: 200px;
+    text-align: initial;
+    align-items: center;
+}
+
+.lang-name {
+    flex: 1 1 auto;
+    margin: 16px;
+    font-weight: 600;
+    color: var(--text-color-darker);
+    cursor: pointer;
+}
+
+.lang-size {
+    flex: 0 0 auto;
+    height: fit-content;
+    font-size: 0.95rem;
+    margin: 16px 10px;
+    color: var(--text-color);
+}
+
+#preinstalled {
+    margin: 16px 18px;
+}
+
+.lang-progress {
+    flex: 0 0 auto;
+    margin: 0px 8px;
+}
+
+.download-button {
+    flex: 0 0 auto;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    line-height: 0;
+    cursor: pointer;
+}
+
+.delete-button {
+    flex: 0 0 auto;
+    padding: 8xp;
+    margin-left: 10px;
+    margin-right: 10px;
+    border: none;
+    background: transparent;
+    line-height: 0;
+    cursor: pointer;
+}
+
+.image-button img {
+    display: block;
+    /* kills the inline descender gap */
+}
+
+.list-header {
+    margin: 16px;
+    font-weight: bold;
+    color: var(--primary_lite);
+    font-size: 0.9rem;
+}
+
+#selected-icon {
+    margin: 0px 16px;
+}
+
+
+/* ConfirmDialog */
+
+#dialog-confirm {
+    width: 350px;
+    max-height: calc(100dvh - 40px);
+    box-shadow: 0px 0px 10px gray;
+}
+
+.message {
+    margin: 16px;
+}
+
+.buttons-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-items: center;
+    align-items: center;
+    padding: 0px 20px;
+}
+
+.button {
+    /* shrink-to-fit instead of stretching */
+    width: auto;
+    min-width: 100px;
+    max-width: calc(100% - 2 * var(--confirm-btn-margin));
+    height: fit-content;
+    margin: var(--confirm-btn-margin);
+
+    border: none;
+    border-radius: 9999px;
+    background-color: var(--primary_very_dark);
+    color: white;
+    font: inherit;
+    font-size: 0.95rem;
+    padding: 10px 28px;
+    cursor: pointer;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

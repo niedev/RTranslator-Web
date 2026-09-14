@@ -1,20 +1,25 @@
 import type { DownloadInfo } from '@src/downloader/DownloadInfo'
-import React, { useEffect, useRef } from 'react'
-import './LanguagesDialog.css'
+import React, { useEffect, useRef, useState } from 'react'
+import './Dialog.css'
 import deleteIcon from '@src/assets/delete_icon.svg';
 import downloadIcon from '@src/assets/download_icon.svg';
-import { getLanguageName } from '@src/tools/language_tools';
-import CircularProgress from './tools/CircularProgress';
+import checkIcon from '@src/assets/check_icon.svg'
+import { getLanguageName, getLanguageNameWithLocal } from '@src/tools/language_tools';
+import CircularProgress from '../tools/CircularProgress';
+import ConfirmDialog from './ConfirmDialog';
 
 interface Props {
    languages: DownloadInfo[];
+   selectedLanguage: string;
    onSelectedLanguage(lang: string): void;
    onDownloadPressed(lang: string): void;
    onCancelPressed(lang: string): void;
    onClose(): void;
 }
 
-export default function LanguagesDialog({ languages, onSelectedLanguage, onDownloadPressed, onCancelPressed, onClose }: Props) {
+export default function LanguagesDialog({ languages, selectedLanguage, onSelectedLanguage, onDownloadPressed, onCancelPressed, onClose }: Props) {
+   const [confirmingDeleteLang, setConfirmingDeleteLang] = useState<string|null>(null);
+
    const dialogRef = useRef<HTMLDialogElement>(null);
    useEffect(() => {
       // Opens the dialog as a modal when the component mounts
@@ -57,26 +62,31 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
 
 
    return (
-      <dialog ref={dialogRef} id="languages-dialog" onClose={onClose} onClick={handleBackdropClick}>
+      <>
+      <dialog ref={dialogRef} id='dialog-languages' className="dialog" onClose={onClose} onClick={handleBackdropClick}>
          <div className='dialog-content'>
-            {installedLanguages.length > 0 &&
-               <>
-               <p className='list-header'>Installed</p>
-               <ul className='list'>
-                  {installedLanguages.map((item) => {
-                     return (
-                        <li key={item.name} className='list-element'>
-                           <p className='lang-name' onClick={() => onSelectedLanguage(item.name)}>{getLanguageName(item.name) ?? item.name}</p>
-                           <p className='lang-size'>{Math.round(item.size / 1000)} MB</p>
-                           <button className='delete-button' onClick={() => onCancelPressed(item.name)}>
-                              <img src={deleteIcon} alt={"delete"+(getLanguageName(item.name) ?? item.name)+"language"} />
-                           </button>
-                        </li>
-                     )
-                  })}
-               </ul>
-               </>
-            }
+            <>
+            <p className='list-header'>Installed</p>
+            <ul className='list'>
+               <li key={"en"} className='list-element'>   {/** English lang */}
+                  <p className='lang-name' onClick={() => onSelectedLanguage("en")}>{getLanguageName("en") ?? "en"}</p>
+                  {"en" == selectedLanguage && <img id='selected-icon' src={checkIcon} alt={"selected language"} />}
+                  <p id='preinstalled' className='lang-size'>Pre-installed</p>
+               </li>
+               {installedLanguages.map((item) => {
+                  return (
+                     <li key={item.name} className='list-element'>
+                        <p className='lang-name' onClick={() => onSelectedLanguage(item.name)}>{getLanguageName(item.name) ?? item.name}</p>
+                        {item.name == selectedLanguage && <img id='selected-icon' src={checkIcon} alt={"selected language"} />}
+                        <p className='lang-size'>{Math.round(item.size / 1000)} MB</p>
+                        <button className='delete-button' onClick={() => setConfirmingDeleteLang(item.name)}>
+                           <img src={deleteIcon} alt={"delete"+(getLanguageName(item.name) ?? item.name)+"language"} />
+                        </button>
+                     </li>
+                  )
+               })}
+            </ul>
+            </>
             {availableLanguages.length > 0 &&
                <>
                <p className='list-header'>Available</p>
@@ -87,7 +97,7 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
                            <p className='lang-name'>{getLanguageName(item.name) ?? item.name}</p>
                            {item.downloading ?
                                  <>
-                                 <p className='lang-size'>{item.unzipping ? "Unzipping..." : Math.round((item.currentProgress/100)*(item.size/1000)) +" / "+ Math.round(item.size/1000)+" MB" }</p>
+                                 <p className='lang-size'>{item.unzipping ? "Unzipping..." : Math.round((item.currentProgress/100)*(item.size/1000)) +" / "+ Math.round(item.size/1000)+" MB"}</p>
                                  <CircularProgress className='lang-progress' value={item.unzipping ? undefined : item.currentProgress} color='#388e3c' size={36} thickness={5}/>
                                  <button className='delete-button' onClick={() => onCancelPressed(item.name)}>
                                     <img src={deleteIcon} alt={"delete"+(getLanguageName(item.name) ?? item.name)+"language"} />
@@ -109,5 +119,21 @@ export default function LanguagesDialog({ languages, onSelectedLanguage, onDownl
             }
          </div>
       </dialog>
+      {confirmingDeleteLang &&
+         <ConfirmDialog
+            message={"Are you sure you wanto to delete "+(getLanguageNameWithLocal("en", confirmingDeleteLang) ?? confirmingDeleteLang)+" language resources?"}
+            onConfirmPressed={() => {
+               setConfirmingDeleteLang(null);
+               onCancelPressed(confirmingDeleteLang);
+            }}
+            onCancelPressed={() => {
+               setConfirmingDeleteLang(null);
+            }}
+            onClose={() => {
+               setConfirmingDeleteLang(null);
+            }}
+         />
+      }
+      </>
    )
 }

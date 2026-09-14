@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import './App.css'
 import { Global } from '@src/Global'
-import LanguagesDialog from './LanguagesDialog';
+import LanguagesDialog from './dialogs/LanguagesDialog';
 import switchIcon from '@src/assets/invert_arrows.svg';
 import { getLanguageName } from '@src/tools/language_tools';
 
@@ -75,7 +75,9 @@ function App() {
                   {getLanguageName(state.firstLanguage) ?? "Loading..."}
                </button>
                <button
-                  onClick={() => { }}
+                  onClick={() => {
+                     global.switchSelectedLanguages();
+                  }}
                   className="image-button"
                >
                   <img src={switchIcon} alt={"switch languages"} />
@@ -95,6 +97,13 @@ function App() {
                         ref={setInputTextArea}
                         className='translation-text-area'
                         name="InputText"
+                        placeholder='Insert text'
+                        onKeyDown={async (e) => {
+                           if(e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              setOutputText(await global.translate(inputText));
+                           }
+                        }}
                         cols={40}
                         rows={5}   // minimum
                         value={inputText}
@@ -127,7 +136,9 @@ function App() {
          {languagesListType != "none" &&
             <LanguagesDialog
                languages={[...global.getMozillaModels()]}
+               selectedLanguage={languagesListType == "first" ? global.getFirstLanguage() : global.getSecondLanguage()}
                onSelectedLanguage={(lang) => {
+                  console.log("Selected: "+lang);
                   if (languagesListType == "first") {
                      global.setFirstLanguage(lang);
                   } else {
