@@ -1,0 +1,12 @@
+#toolbar {
+    height: var(--toolbar-height);
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#logo {
+    flex: 0 1 auto;
+    margin: 0px 24px;
+}

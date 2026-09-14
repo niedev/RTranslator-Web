@@ -1,112 +1,34 @@
-/*.translation-container {
-
-}
-
-.language-selection-container {
-
-}
-
-.text-areas-container {
-
-}
-
-.language-selector {
-   background-color: #27672e; 
-   color: #ffffff;
-   border: none;
-   padding: 12px 32px;
-   border-radius: 9999px;
-   font-size: 16px;
-   font-family: sans-serif;
-}
-
-.image-button {
-   background-color: transparent;
-   color: transparent;
-   border: none;
-}*/
-
-
-
-/* =========================================================
-   RTranslator web — layout
-   Single stylesheet for #translation-container and children.
-   Tune everything from the tokens below.
-   ========================================================= */
-
-:root {
-   /* colors */
-   --primary: #43a047;
-   --primary_very_dark: #296B2C;
-   --primary_very_light: #E6F8E6;
-   --very_very_light_gray: #F5F5F5;
-   --very_light_gray: #e0e0e0;
-   --text-color: #1f1f1f;
-
-   /* page */
-   --page-padding-top: 24px;    /* no bottom padding: the panel is allowed
-                                   to sit flush against the viewport bottom */
-
-   /* translation-container */
-   --container-width: 1000px;
-   --container-min-height: 500px;
-
-   /* language bar */
-   --lang-bar-height: 200px;
-   --lang-btn-width: 230px;     /* desired width, may shrink */
-   --lang-btn-width-shorter: 200px;     /* desired width, may shrink */
-   --lang-btn-height: 56px;     /* fixed */
-   --lang-btn-gutter: 16px;     /* margin around each selector */
-   --switch-slot: 66px;         /* empty space reserved for the switch icon */
-
-   /* text areas */
-   --panel-radius: 20px;
-   --divider-length: 80%;       /* line shorter than the parent */
-   --text-area-min-height: 140px;
-
-   /* translate button (pill, width driven by its own text) */
-   --action-btn-height: 48px;
-   --action-btn-margin: 16px;
-}
-
-*,
-*::before,
-*::after {
-   box-sizing: border-box;
-}
-
-html,
-body {
-   margin: 0;
-   min-height: 100dvh;
-}
-
-body {
-   background-color: var(--very_very_light_gray);
-   color: var(--text-color);
-   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-
-   display: flex;
-   place-items: stretch;        /* overrides place-items: center from index.css */
-   align-items: stretch;        /* the app root fills the width */
-   text-align: initial;         /* neutralizes a centered default from index.css */
-}
-
-/* The app root sits between <body> and the panel, so the centering has to
-   happen here. Change the selector if your mount node isn't #root.
-   No max-width / padding / place-items here: those are what push the panel
-   off-center in the default Vite and CRA stylesheets. */
-#root {
-   flex: 1 1 auto;
-   min-width: 0;
-   max-width: none;
-   padding: var(--page-padding-top) 0 0;
-
+.container {
+   height: calc(100% - var(--toolbar-height));
    /* panel centered horizontally, pinned to the top, so its max-height maps
       exactly to "up to the bottom of the viewport" */
    display: flex;
+   align-items: center;
    justify-content: center;
+}
+
+#loading-father-container {
+   justify-content: center;
+   padding-bottom: var(--toolbar-height);
+}
+
+#main-container {
    align-items: flex-start;
+}
+
+/* =========================================================
+   initial loading
+   ========================================================= */
+
+.loading-container {
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+}
+
+.loadingbar {
+   margin: 16px;
 }
 
 /* =========================================================
@@ -119,7 +41,7 @@ body {
    background: transparent;
 
    /* fixed width, never wider than the viewport */
-   width: min(var(--container-width), 100%);
+   width: min(var(--translation-container-width), 100%);
 
    /* horizontally centered, vertically pinned to the top — stated on the
       element itself so it holds whether the parent is a flex row, a flex
@@ -132,7 +54,7 @@ body {
    /* grows with the content, between a floor and the viewport bottom */
    height: auto;
    min-height: var(--container-min-height);
-   max-height: calc(100dvh - var(--page-padding-top));
+   max-height: calc(100dvh - var(--toolbar-height));
 }
 
 /* =========================================================
@@ -332,9 +254,6 @@ body {
    ========================================================= */
 
 @media (max-width: 700px) {
-   body {
-      background-color: var(--primary_very_light);
-   }
 
    #translation-container {
       padding: 0;

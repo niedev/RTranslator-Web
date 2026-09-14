@@ -1,0 +1,85 @@
+/* =========================================================
+   RTranslator web — layout
+   ========================================================= */
+
+/* global css variables */
+:root {
+    /* colors */
+    --primary: #43a047;
+    --primary_lite: #66bb6a;
+    --primary_very_dark: #296B2C;
+    --primary_very_light: #E6F8E6;
+    --very_very_light_gray: #F5F5F5;
+    --very_light_gray: #e0e0e0;
+    --text-color: #1f1f1f;
+    --dialog-text-color: #5A5A5A;
+    --dialog-text-color-darker: #404040;
+
+    /* margins */
+    --confirm-btn-margin: 16px;
+
+   /* page */
+   --toolbar-height: 64px;
+
+   /* translation-container */
+   --translation-container-width: 1300px;
+   --container-min-height: 500px;
+
+   /* language bar */
+   --lang-bar-height: 200px;
+   --lang-btn-width: 230px;     /* desired width, may shrink */
+   --lang-btn-width-shorter: 200px;     /* desired width, may shrink */
+   --lang-btn-height: 56px;     /* fixed */
+   --lang-btn-gutter: 16px;     /* margin around each selector */
+   --switch-slot: 66px;         /* empty space reserved for the switch icon */
+
+   /* text areas */
+   --panel-radius: 20px;
+   --divider-length: 80%;       /* line shorter than the parent */
+   --text-area-min-height: 140px;
+
+   /* translate button (pill, width driven by its own text) */
+   --action-btn-height: 48px;
+   --action-btn-margin: 16px;
+}
+
+*,
+*::before,
+*::after {
+   box-sizing: border-box;
+}
+
+html,
+body {
+   margin: 0;
+   min-height: 100dvh;
+}
+
+body {
+   background-color: var(--very_very_light_gray);
+   color: var(--text-color);
+   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+   display: flex;
+   place-items: stretch;        /* overrides place-items: center from index.css */
+   align-items: stretch;        /* the app root fills the width */
+   text-align: initial;         /* neutralizes a centered default from index.css */
+}
+
+#root {
+   flex: 1 1 auto;
+   min-width: 0;
+   max-width: none;
+   padding: 0;
+}
+
+
+/* =========================================================
+   smartphone mode
+   ========================================================= */
+
+@media (max-width: 700px) {
+   body {
+      background-color: var(--primary_very_light);
+   }
+}
