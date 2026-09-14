@@ -11,9 +11,9 @@
     --primary_very_light: #E6F8E6;
     --very_very_light_gray: #F5F5F5;
     --very_light_gray: #e0e0e0;
+    --very_very_dark_gray: #5A5A5A;
+    --light_black: #404040;
     --text-color: #1f1f1f;
-    --dialog-text-color: #5A5A5A;
-    --dialog-text-color-darker: #404040;
 
     /* margins */
     --confirm-btn-margin: 16px;
@@ -39,8 +39,7 @@
    --text-area-min-height: 140px;
 
    /* translate button (pill, width driven by its own text) */
-   --action-btn-height: 48px;
-   --action-btn-margin: 16px;
+   --action-btn-margin: 18px;
 }
 
 *,

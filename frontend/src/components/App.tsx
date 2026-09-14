@@ -3,9 +3,12 @@ import './App.css'
 import { Global } from '@src/Global'
 import LanguagesDialog from './dialogs/LanguagesDialog';
 import switchIcon from '@src/assets/invert_arrows.svg';
+import cancelIcon from '@src/assets/cancel_icon.svg'
+import copyIcon from '@src/assets/copy_icon.svg'
 import { getLanguageName } from '@src/tools/language_tools';
 import CircularProgress from './tools/CircularProgress';
 import Toolbar from './Toolbar';
+import { Toaster, toast } from 'sonner';
 
 function App() {
    type LanguageListType = "first" | "second" | "none";
@@ -60,6 +63,15 @@ function App() {
    }, [outputText, outputTextArea]);
 
 
+   //functions
+   function copyToClipboard(text: string) {
+      navigator.clipboard.writeText(outputText);
+      toast("Copied to clipboard!", {
+         icon: <img width={20} src={copyIcon} alt={""} />,
+      });
+   }
+
+
 
    if (!state.isInitialized) {
       return (
@@ -89,10 +101,11 @@ function App() {
                      {getLanguageName(state.firstLanguage) ?? "Loading..."}
                   </button>
                   <button
+                     id='switch-image'
+                     className="image-button"
                      onClick={() => {
                         global.switchSelectedLanguages();
                      }}
-                     className="image-button"
                   >
                      <img src={switchIcon} alt={"switch languages"} />
                   </button>
@@ -105,36 +118,66 @@ function App() {
                   </button>
                </div>
                <div id='text-areas-container'>
-                  <div id='text-areas-main-container'>
-                     <label className="translation-wrapper">
-                        <textarea
-                           ref={setInputTextArea}
-                           className='translation-text-area'
-                           name="InputText"
-                           placeholder='Insert text'
-                           onKeyDown={async (e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                 e.preventDefault();
-                                 setOutputText(await global.translate(inputText));
-                              }
-                           }}
-                           cols={40}
-                           rows={5}   // minimum
-                           value={inputText}
-                           onChange={e => setInputText(e.target.value)}
-                        />
-                     </label>
-                     <label className="translation-wrapper">
-                        <textarea
-                           ref={setOutputTextArea}
-                           className='translation-text-area'
-                           name="OutputText"
-                           cols={40}
-                           rows={5}   // minimum
-                           value={outputText}
-                           onChange={e => setOutputText(e.target.value)}
-                        />
-                     </label>
+                  <div id='text-areas-scroll-wrapper'>
+                     <div id='text-areas-main-container'>
+                        <div id='text-area-input-container' >
+                           <label className="translation-wrapper">
+                              <textarea
+                                 ref={setInputTextArea}
+                                 className='translation-text-area'
+                                 name="InputText"
+                                 placeholder='Insert text'
+                                 onKeyDown={async (e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                       e.preventDefault();
+                                       setOutputText(await global.translate(inputText));
+                                    }
+                                 }}
+                                 cols={40}
+                                 rows={5}   // minimum
+                                 value={inputText}
+                                 onChange={e => setInputText(e.target.value)}
+                              />
+                           </label>
+                           {(inputText || outputText) &&
+                              <div className='text-buttons-container'>
+                                 <button className="image-button" onClick={() => {
+                                    setInputText("");
+                                    setOutputText("");
+                                 }}>
+                                    <img src={cancelIcon} alt={"cancel input text"} />
+                                 </button>
+                                 {inputText &&
+                                    <button className="image-button" onClick={() => copyToClipboard(inputText)}>
+                                       <img src={copyIcon} alt={"copy input text"} />
+                                    </button>
+                                 }
+                              </div>
+                           }
+                        </div>
+                        <div id='text-areas-divider' />          {/* text areas divider mobile: in flow */}
+                        <div id='text-area-output-container' >
+                           <label className="translation-wrapper">
+                              <textarea
+                                 ref={setOutputTextArea}
+                                 className='translation-text-area'
+                                 name="OutputText"
+                                 cols={40}
+                                 rows={5}   // minimum
+                                 value={outputText}
+                                 onChange={e => setOutputText(e.target.value)}
+                              />
+                           </label>
+                           {outputText &&
+                              <div className='text-buttons-container'>
+                                 <button className="image-button" onClick={() => copyToClipboard(outputText)}>
+                                    <img src={copyIcon} alt={"copy output text"} />
+                                 </button>
+                              </div>
+                           }
+                        </div>
+                     </div>
+                     <div id='text-areas-divider-pinned' />    {/* text areas divider desktop: pinned */}
                   </div>
                   <button
                      className='text-button'
@@ -180,6 +223,7 @@ function App() {
                />
             }
          </div>
+         <Toaster position='bottom-right' />
       </>
    );
 }

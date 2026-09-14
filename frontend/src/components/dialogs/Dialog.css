@@ -45,7 +45,7 @@
     flex: 1 1 auto;
     margin: 16px;
     font-weight: 600;
-    color: var(--dialog-text-color-darker);
+    color: var(--light_black);
     cursor: pointer;
 }
 
@@ -54,7 +54,7 @@
     height: fit-content;
     font-size: 0.95rem;
     margin: 16px 10px;
-    color: var(--dialog-text-color);
+    color: var(--very_very_dark_gray);
 }
 
 #preinstalled {
