@@ -26,8 +26,14 @@ function App() {
 
    const globalRef = useRef<Global | null>(null);
    if (globalRef.current === null) {
-      globalRef.current = new Global();
-      globalRef.current.init();
+      try{
+         globalRef.current = new Global();
+         globalRef.current.init();
+      } catch (e) {
+         console.log(e);
+         toast.error("Error during initialization");
+         throw e;  //the app will crash (todo: handle it better in the future)
+      }
    }
    const global = globalRef.current;
 
@@ -76,7 +82,7 @@ function App() {
 
    async function translate(text: string) {
       setIsTranslating(true);
-      try{
+      try {
          setOutputText(await global.translate(inputText));
       } catch (e) {
          console.log(e);
@@ -177,29 +183,29 @@ function App() {
                            }
                         </div>
                         <div id='text-areas-divider' />          {/* text areas divider mobile: in flow */}
-                        {isTranslating ? 
-                           <TranslationSkeleton inputText={inputText}/>
-                        :
+                        {isTranslating ?
+                           <TranslationSkeleton inputText={inputText} />
+                           :
                            <div className='text-area-inner-container' >
-                           <label className="translation-wrapper">
-                              <textarea
-                                 ref={setOutputTextArea}
-                                 className='translation-text-area'
-                                 name="OutputText"
-                                 cols={40}
-                                 rows={5}   // minimum
-                                 value={outputText}
-                                 onChange={e => setOutputText(e.target.value)}
-                              />
-                           </label>
-                           {outputText &&
-                              <div className='text-buttons-container'>
-                                 <button className="image-button" onClick={() => copyToClipboard(outputText)}>
-                                    <img src={copyIcon} alt={"copy output text"} />
-                                 </button>
-                              </div>
-                           }
-                        </div>
+                              <label className="translation-wrapper">
+                                 <textarea
+                                    ref={setOutputTextArea}
+                                    className='translation-text-area'
+                                    name="OutputText"
+                                    cols={40}
+                                    rows={5}   // minimum
+                                    value={outputText}
+                                    onChange={e => setOutputText(e.target.value)}
+                                 />
+                              </label>
+                              {outputText &&
+                                 <div className='text-buttons-container'>
+                                    <button className="image-button" onClick={() => copyToClipboard(outputText)}>
+                                       <img src={copyIcon} alt={"copy output text"} />
+                                    </button>
+                                 </div>
+                              }
+                           </div>
                         }
                      </div>
                      <div id='text-areas-divider-pinned' />    {/* text areas divider desktop: pinned */}
@@ -227,7 +233,6 @@ function App() {
                      try {
                         if (languagesListType == "first") {
                            await global.setFirstLanguage(lang);
-
                         } else {
                            await global.setSecondLanguage(lang);
                         }
@@ -254,7 +259,7 @@ function App() {
                   }}
                   onCancelPressed={async (lang) => {
                      setTranslateDisabled(true);
-                     try{
+                     try {
                         await global.cancelModelDownload(lang);
                      } catch (e) {
                         console.log(e);
@@ -263,7 +268,10 @@ function App() {
                         setTranslateDisabled(false);
                      }
                   }}
-                  onClose={() => { setLanguageListType("none") }}
+                  onClose={() => {
+                     console.log("Languages dialog closed");
+                     setLanguageListType("none")
+                  }}
                />
             }
          </div>

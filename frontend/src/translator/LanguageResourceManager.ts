@@ -125,7 +125,6 @@ export class LanguageResourceManager extends TranslatorBacking {
 
         let mozillaFolder = await this.getMozillaFolder();
         let languageDir = await mozillaFolder.getDirectoryHandle(language, { create: false });
-        if((await listDirectoryChildren(languageDir)).find((item) => item.kind === "directory" && item.name === language)) languageDir = await languageDir.getDirectoryHandle(language, {create: false});  //todo: remove it after fixing the mozilla zips internal structures (for now this manages the double language folder)
         let modelDir = await languageDir.getDirectoryHandle(langs.from + langs.to);
         let modelFiles = await listDirectoryChildren(modelDir);
 

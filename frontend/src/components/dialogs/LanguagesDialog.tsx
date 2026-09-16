@@ -130,6 +130,7 @@ export default function LanguagesDialog({ languages, selectedLanguage, onSelecte
                setConfirmingDeleteLang(null);
             }}
             onClose={() => {
+               console.log("Confirm dialog closed");
                setConfirmingDeleteLang(null);
             }}
          />

@@ -33,7 +33,6 @@ export default function ConfirmDialog({ message, onConfirmPressed, onCancelPress
       // If the click is outside the bounding box, it hit the backdrop
       if (!clickedInside) {
          dialogElement.close();
-         // todo: check if in this case the onClose of the dialog is called, if not call onClose() here
       }
    };
 

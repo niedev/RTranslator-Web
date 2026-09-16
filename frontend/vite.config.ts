@@ -24,7 +24,7 @@ export default defineConfig({
       // Whenever Vite sees a request starting with /api, 
       // it forwards it to the Node backend (only for development)
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3847',
         changeOrigin: true,
       },
     },

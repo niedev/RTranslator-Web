@@ -56,15 +56,32 @@ export class Translator {
         return promise;
     }
 
-    translate(text: string, from: string, to: string): Promise<string> {
+    public translate(text: string, from: string, to: string): Promise<string> {
         if (from === to) return Promise.resolve(text);   //if the source and target languages are the same, we return the input text as a result immediately
 
         return this.enqueue("translate", (signal) => this.performTranslate(text, from, to, signal));
     }
 
-    loadLanguagePairResources(srcLang: string, tgtLang: string): Promise<void> {
+    public loadLanguagePairResources(srcLang: string, tgtLang: string): Promise<void> {
         return this.enqueue("load", (signal) => this.performLoadLanguagePairResources(srcLang, tgtLang, signal));
     }
+
+    /**
+     * This method will update the registery attribute of languageResourcesManager, by adding the info of a new downloaded model, without reloading the entire registery with loadModelRegistery.
+     */
+    public async addModelToRegistery(lang: string): Promise<void> {
+        return this.languageResourcesManager.addModelToRegistery(lang);
+    }
+
+    /**
+     * This method will update the registery attribute of languageResourcesManager, by removing the info of a deleted downloaded model, without reloading the entire registery with loadModelRegistery.
+     */
+    public async removeModelFromRegistery(lang: string): Promise<void> {
+        if (lang != "en") {
+            return this.languageResourcesManager.removeModelFromRegistery(lang);
+        }
+    }
+
 
 
     private async performTranslate(text: string, from: string, to: string, signal: AbortSignal): Promise<string> {
@@ -119,22 +136,6 @@ export class Translator {
             // load for the languageResourcesManager worker  (wasm)
             if (!await worker.exports.hasTranslationModel(pair)) await worker.exports.loadTranslationModel(pair, model);
             signal.throwIfAborted();
-        }
-    }
-
-    /**
-     * This method will update the registery attribute of languageResourcesManager, by adding the info of a new downloaded model, without reloading the entire registery with loadModelRegistery.
-     */
-    async addModelToRegistery(lang: string): Promise<void> {
-        return this.languageResourcesManager.addModelToRegistery(lang);
-    }
-
-    /**
-     * This method will update the registery attribute of languageResourcesManager, by removing the info of a deleted downloaded model, without reloading the entire registery with loadModelRegistery.
-     */
-    async removeModelFromRegistery(lang: string): Promise<void> {
-        if (lang != "en") {
-            return this.languageResourcesManager.removeModelFromRegistery(lang);
         }
     }
 }
