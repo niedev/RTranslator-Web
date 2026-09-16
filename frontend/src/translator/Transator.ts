@@ -27,7 +27,7 @@ export class Translator {
         if (from === to) return Promise.resolve(text);  //if the source and target languages are the same, we return the input text as a result immediately
 
         if(this.loadLanguagesTask != null) {
-            await this.loadLanguagesTask.promise;   //if a loadLanguagesTask is runnign we wait for it to finish before starting the translation
+            await this.loadLanguagesTask.promise;   //if a loadLanguagesTask is running we wait for it to finish before starting the translation
         }
 
         let abortController = new AbortController();

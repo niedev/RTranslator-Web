@@ -1,0 +1,62 @@
+.skeleton-container {
+   /*gap: 8px 6px; /* Row gap and column gap */
+}
+
+
+
+.skeleton-paragraph {
+   /* Match the textarea's line-height so the vertical gaps match */
+   line-height: 1.7; 
+   font-size: 0.96rem;
+   margin-bottom: 0em; /* Space between explicit Enter key presses */
+   /* Forces long continuous strings (no spaces) to wrap */
+   overflow-wrap: break-word;  
+   word-break: break-word;
+   white-space: pre-wrap;  /* Preserves your explicit spaces/newlines but still wraps at the edge */
+}
+
+.skeleton-text-mirror {
+   color: transparent; /* Hides the actual letters */
+   user-select: none; /* Prevents users from highlighting the invisible text */
+   border-radius: 4px;
+   animation: pulse-gray 1.5s infinite ease-in-out;
+  
+   /* The magic property that applies rounded corners to every wrapped line */
+   -webkit-box-decoration-break: clone;
+   box-decoration-break: clone;
+}
+
+/* Fallback for when the input is completely empty */
+.skeleton-line-fallback {
+   display: block;
+   height: 1em;
+   border-radius: 4px;
+   margin-bottom: 0.5em;
+   animation: pulse-gray 1.5s infinite ease-in-out;
+}
+
+/* TranslationOutput.css */
+@keyframes pulse-gray {
+   0% {
+      background-color: #e5e7eb; /* Light gray */
+   }
+   50% {
+      background-color: #d1d5db; /* Darker gray */
+   }
+   100% {
+      background-color: #e5e7eb; /* Light gray */
+   }
+}
+
+
+.skeleton-paragraph-block {
+  margin-bottom: 0.5em; /* Space between explicit Enter key presses */
+}
+
+.skeleton-line {
+   height: 1.2em; /* Roughly matches the text line height */
+   border-radius: 4px;
+   animation: pulse-gray 1.5s infinite ease-in-out;
+   margin-bottom: 0.4em; /* Vertical space between wrapped lines */
+   max-width: 100%
+}

@@ -9,6 +9,7 @@ import { getLanguageName } from '@src/tools/language_tools';
 import CircularProgress from './tools/CircularProgress';
 import Toolbar from './Toolbar';
 import { Toaster, toast } from 'sonner';
+import TranslationSkeleton from './TranslationSkeleton';
 
 function App() {
    type LanguageListType = "first" | "second" | "none";
@@ -17,6 +18,7 @@ function App() {
    const [outputText, setOutputText] = useState("");
    const [languagesListType, setLanguageListType] = useState<LanguageListType>("none");
    const [translateDisabled, setTranslateDisabled] = useState(false);
+   const [isTranslating, setIsTranslating] = useState(false);
 
    const [translationContainer, setTranslationContainer] = useState<HTMLDivElement | null>(null);
    const [inputTextArea, setInputTextArea] = useState<HTMLTextAreaElement | null>(null);
@@ -70,6 +72,16 @@ function App() {
       toast("Copied to clipboard!", {
          icon: <img width={20} src={copyIcon} alt={""} />,
       });
+   }
+
+   async function translate(text: string) {
+      setIsTranslating(true);
+      try{
+         setOutputText(await global.translate(inputText));
+      } catch (e) {
+         console.log(e);
+      }
+      setIsTranslating(false);
    }
 
 
@@ -129,7 +141,7 @@ function App() {
                <div id='text-areas-container'>
                   <div id='text-areas-scroll-wrapper'>
                      <div id='text-areas-main-container'>
-                        <div id='text-area-input-container' >
+                        <div className='text-area-inner-container' >
                            <label className="translation-wrapper">
                               <textarea
                                  ref={setInputTextArea}
@@ -139,7 +151,7 @@ function App() {
                                  onKeyDown={async (e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
                                        e.preventDefault();
-                                       setOutputText(await global.translate(inputText));
+                                       translate(inputText);
                                     }
                                  }}
                                  cols={40}
@@ -165,7 +177,10 @@ function App() {
                            }
                         </div>
                         <div id='text-areas-divider' />          {/* text areas divider mobile: in flow */}
-                        <div id='text-area-output-container' >
+                        {isTranslating ? 
+                           <TranslationSkeleton inputText={inputText}/>
+                        :
+                           <div className='text-area-inner-container' >
                            <label className="translation-wrapper">
                               <textarea
                                  ref={setOutputTextArea}
@@ -185,13 +200,14 @@ function App() {
                               </div>
                            }
                         </div>
+                        }
                      </div>
                      <div id='text-areas-divider-pinned' />    {/* text areas divider desktop: pinned */}
                   </div>
                   <button
                      className='text-button'
                      onClick={async () => {
-                        setOutputText(await global.translate(inputText));
+                        translate(inputText);
                      }}
                      disabled={translateDisabled}
                   >
