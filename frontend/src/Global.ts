@@ -185,34 +185,32 @@ export class Global {
         return language;
     }
 
-    public setFirstLanguage(lang: string): string {
+    public async setFirstLanguage(lang: string): Promise<void> {
         this.selectedFirstLanguage = lang;
         let firstLanguage = this.getFirstLanguage();
         localStorage.setItem("firstTextLanguage", firstLanguage);
-        this.translator.loadLanguagePairResources(firstLanguage, this.getSecondLanguage());
         this.updateState();
-        return firstLanguage;
+        await this.translator.loadLanguagePairResources(firstLanguage, this.getSecondLanguage());
     }
 
-    public setSecondLanguage(lang: string): string {
+    public async setSecondLanguage(lang: string): Promise<void> {
         this.selectedSecondLanguage = lang;
         let secondLanguage = this.getSecondLanguage();
         localStorage.setItem("secondTextLanguage", secondLanguage);
-        this.translator.loadLanguagePairResources(this.getFirstLanguage(), secondLanguage);
         this.updateState();
-        return secondLanguage;
+        await this.translator.loadLanguagePairResources(this.getFirstLanguage(), secondLanguage);
     }
 
-    public switchSelectedLanguages(): void {
+    public async switchSelectedLanguages(): Promise<void> {
         let firstLanguage = this.getFirstLanguage();
         let secondLanguage = this.getSecondLanguage();
         localStorage.setItem("firstTextLanguage", secondLanguage);
         localStorage.setItem("secondTextLanguage", firstLanguage);
         this.selectedFirstLanguage = secondLanguage;
         this.selectedSecondLanguage = firstLanguage;
-        //loadLanguagePairResources normally wouldn't change nothing in this case, it does only in the case getFirstLanguage() or getSecondLanguage() change the language.
-        this.translator.loadLanguagePairResources(this.selectedFirstLanguage, this.selectedSecondLanguage);
         this.updateState();
+        //loadLanguagePairResources normally wouldn't change nothing in this case, it does only in the case getFirstLanguage() or getSecondLanguage() change the language.
+        await this.translator.loadLanguagePairResources(this.selectedFirstLanguage, this.selectedSecondLanguage);
     }
 
     public async translate(text: string): Promise<string>  {
@@ -279,8 +277,17 @@ export class Global {
             modelDownload.currentProgress = 0;
             modelDownload.downloading = false;
             modelDownload.unzipping = false;
+            // we update the registery of the translator
             await this.translator.removeModelFromRegistery(modelDownload.name);
-            this.updateState(true, modelDownloadIndex);
+            // we eventually update the selected languages (if one of them was the one deleted)
+            let oldFirstLang = this.selectedFirstLanguage;
+            let oldSecondLang = this.selectedSecondLanguage;
+            let newFirstLang = this.getFirstLanguage();
+            let newSecondLang = this.getSecondLanguage();
+            this.updateState(true, modelDownloadIndex);   //we update the status here to not await the model load (too long)
+            if(newFirstLang != oldFirstLang || newSecondLang != oldSecondLang){
+                await this.translator.loadLanguagePairResources(newFirstLang, newSecondLang);
+            }
         }
     }
 

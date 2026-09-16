@@ -1,11 +1,16 @@
-import { TranslatorBacking, type ModelFilesInfo, type LanguagePair, type TranslationModel, type TranslatorOptions } from "@browsermt/bergamot-translator/translator.js";
+import { TranslatorBacking, type ModelFilesInfo, type LanguagePair, type TranslationModel, type TranslatorOptions, CancelledError, type StringifiedLanguagePair } from "@browsermt/bergamot-translator/translator.js";
 import { listDirectoryChildren } from "@src/file-system/file-system-tools"
 
 export class LanguageResourceManager extends TranslatorBacking {
     mozillaFolder?: Promise<FileSystemDirectoryHandle>;
+    /**
+     * Map of controllers to enable the abort of the running loadTranslationModels.
+     */
+    loadModelsAbortControllers: Map<StringifiedLanguagePair, AbortController>;
 
     constructor(options: TranslatorOptions) {
         super(options);
+        this.loadModelsAbortControllers = new Map();
         this.mozillaFolder = undefined;
         this.getMozillaFolder();
     }
@@ -66,8 +71,34 @@ export class LanguageResourceManager extends TranslatorBacking {
      */
     async removeModelFromRegistery(lang: string): Promise<void>{
         //removes all the models that have lang as a source or target language (they should be always 2 lang -> en and en -> lang)
-        let updatedRegistry = (await this.registry).filter((value) => {value.from != lang && value.to != lang});
+        let updatedRegistry = (await this.registry).filter((value) => value.from != lang && value.to != lang);
         this.registry = Promise.resolve(updatedRegistry);
+    }
+
+    /**
+     * Gets or loads translation model data. 
+     * Caching wrapper around `loadTranslationModel()`.
+     * This method will override the default behaviour of the TranslatorBacking one: if signal is not passed,
+     * a new abortController is created to save it in loadModelsAbortControllers, to enable the possibility to abort the
+     * running loadTranslationModels.
+     */
+    override async getTranslationModel(langs: LanguagePair, options?: { signal?: AbortSignal }): Promise<TranslationModel> {
+        const key: any = JSON.stringify(langs);
+
+        if (!this.buffers.has(key)) {
+            let abortController = new AbortController();
+            if(options?.signal) this.loadModelsAbortControllers.set(key, abortController);
+
+            const promise = this.loadTranslationModel(langs, {signal: options?.signal ?? abortController.signal});
+
+            // set the promise so we return the same promise when its still pending
+            this.buffers.set(key, promise);
+
+            // But if loading fails, remove the promise again so we can try again later
+            promise.catch(err => this.buffers.delete(key))
+        }
+
+        return this.buffers.get(key) ?? {} as any;
     }
 
     /**
@@ -82,6 +113,8 @@ export class LanguageResourceManager extends TranslatorBacking {
      * @returns an object containing all the data associated to the model in the form of ArrayBuffers
      */
     override async loadTranslationModel(langs: LanguagePair, options?: { signal?: AbortSignal }): Promise<TranslationModel> {
+        options?.signal?.throwIfAborted();
+
         // Find that model in the registry which will tell us about its files
         const modelInfo = (await this.registry).find(model => model.from == langs.from && model.to == langs.to);
 
@@ -95,6 +128,9 @@ export class LanguageResourceManager extends TranslatorBacking {
         if((await listDirectoryChildren(languageDir)).find((item) => item.kind === "directory" && item.name === language)) languageDir = await languageDir.getDirectoryHandle(language, {create: false});  //todo: remove it after fixing the mozilla zips internal structures (for now this manages the double language folder)
         let modelDir = await languageDir.getDirectoryHandle(langs.from + langs.to);
         let modelFiles = await listDirectoryChildren(modelDir);
+
+        options?.signal?.throwIfAborted();
+        
         if (!modelFiles || modelFiles.length == 0) throw new Error("No models files found");
         let config: {
             [key:string]: string
@@ -107,6 +143,8 @@ export class LanguageResourceManager extends TranslatorBacking {
         let lexShort: ArrayBuffer|null = null;
 
         for (let file of modelFiles) {
+            options?.signal?.throwIfAborted();
+
             if (file.handle instanceof FileSystemFileHandle) {
                 if (file.name.includes("model")) {
                     //if the model is quantized we specify the quantization strategy to use in the config
@@ -143,6 +181,11 @@ export class LanguageResourceManager extends TranslatorBacking {
         } else if (vocab) {
             vocabs = [vocab]
         }
+
+        options?.signal?.throwIfAborted();
+
+        const key: any = JSON.stringify(langs);
+        this.loadModelsAbortControllers.delete(key);   //we delete the abort controller for this loadTranslationModel because from here it is no more interruptable.
 
         if (model && vocabs && lexShort) {
             return {

@@ -16,6 +16,7 @@ function App() {
    const [inputText, setInputText] = useState("");
    const [outputText, setOutputText] = useState("");
    const [languagesListType, setLanguageListType] = useState<LanguageListType>("none");
+   const [translateDisabled, setTranslateDisabled] = useState(false);
 
    const [translationContainer, setTranslationContainer] = useState<HTMLDivElement | null>(null);
    const [inputTextArea, setInputTextArea] = useState<HTMLTextAreaElement | null>(null);
@@ -103,8 +104,16 @@ function App() {
                   <button
                      id='switch-image'
                      className="image-button"
-                     onClick={() => {
-                        global.switchSelectedLanguages();
+                     onClick={async () => {
+                        setTranslateDisabled(true);
+                        try {
+                           await global.switchSelectedLanguages();
+                        } catch (e) {
+                           console.log(e);
+                           toast.error("Error loading the new language models");
+                        } finally {
+                           setTranslateDisabled(false);
+                        }
                      }}
                   >
                      <img src={switchIcon} alt={"switch languages"} />
@@ -184,6 +193,7 @@ function App() {
                      onClick={async () => {
                         setOutputText(await global.translate(inputText));
                      }}
+                     disabled={translateDisabled}
                   >
                      Translate
                   </button>
@@ -194,14 +204,23 @@ function App() {
                <LanguagesDialog
                   languages={[...global.getMozillaModels()]}
                   selectedLanguage={languagesListType == "first" ? global.getFirstLanguage() : global.getSecondLanguage()}
-                  onSelectedLanguage={(lang) => {
+                  onSelectedLanguage={async (lang) => {
                      console.log("Selected: " + lang);
-                     if (languagesListType == "first") {
-                        global.setFirstLanguage(lang);
-                     } else {
-                        global.setSecondLanguage(lang);
-                     }
                      setLanguageListType("none");  //close the dialog
+                     setTranslateDisabled(true);
+                     try {
+                        if (languagesListType == "first") {
+                           await global.setFirstLanguage(lang);
+
+                        } else {
+                           await global.setSecondLanguage(lang);
+                        }
+                     } catch (e) {
+                        console.log(e);
+                        toast.error("Error loading the new language models");
+                     } finally {
+                        setTranslateDisabled(false);
+                     }
                   }}
                   onDownloadPressed={async (lang) => {
                      try {
@@ -213,11 +232,20 @@ function App() {
                         } else {
                            //we notify an unexpected error
                            console.log(e)
+                           toast.error("Error in the download, please try again");
                         }
                      }
                   }}
                   onCancelPressed={async (lang) => {
-                     global.cancelModelDownload(lang);
+                     setTranslateDisabled(true);
+                     try{
+                        await global.cancelModelDownload(lang);
+                     } catch (e) {
+                        console.log(e);
+                        toast.error("Error canceling the language");
+                     } finally {
+                        setTranslateDisabled(false);
+                     }
                   }}
                   onClose={() => { setLanguageListType("none") }}
                />

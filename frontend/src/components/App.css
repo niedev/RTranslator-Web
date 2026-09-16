@@ -253,7 +253,7 @@
    font: inherit;
    font-size: 1rem;
    line-height: 1.5;
-   padding: 20px;
+   padding: 32px;
    overflow: hidden;
 }
 
@@ -301,6 +301,10 @@
 
 .text-button:hover {
    filter: brightness(0.95);
+}
+
+.text-button:disabled {
+   filter: grayscale();
 }
 
 /* =========================================================
