@@ -1,11 +1,22 @@
 import { LatencyOptimisedTranslator, type LanguagePair, type TranslationModel, type TranslatorOptions, type TranslationResponse } from "@browsermt/bergamot-translator/translator.js";
 import { LanguageResourceManager } from "@src/translator/LanguageResourceManager"
 
+type Kind = "translate" | "load";
+
 export class Translator {
     private translator: LatencyOptimisedTranslator;
     private languageResourcesManager: LanguageResourceManager;
-    private translateTask: { controller: AbortController, promise: Promise<TranslationResponse> } | null;
-    private loadLanguagesTask: { controller: AbortController, promise: Promise<void> } | null;
+    /**
+     * It's a promise representing the tail of the queue — the last operation that was scheduled.
+     * Each new task attaches itself with .then(), which means it starts only after everything scheduled before it has settled,
+     * then it assign its promise to lastQueuedTask, which makes it the new tail, so the next arrival queues behind it.
+     */
+    private lastQueuedTask: Promise<unknown>;
+    /**
+     * It's a registry of every task that has been scheduled but hasn't finished yet — so a queued task that hasn't started yet is in there too.
+     * Its only job is to hold the AbortControllers and kinds, so a newly arriving task can call abort() on the ones it supersedes (also based on the types of tasks).
+     */
+    private pendingTasksInfos : Set<{ kind: Kind; controller: AbortController }>;
 
 
     constructor() {
@@ -19,69 +30,71 @@ export class Translator {
         };
         this.languageResourcesManager = new LanguageResourceManager(options);
         this.translator = new LatencyOptimisedTranslator(options, this.languageResourcesManager);
-        this.translateTask = null;
-        this.loadLanguagesTask = null;
+        this.lastQueuedTask = Promise.resolve();
+        this.pendingTasksInfos = new Set();
     }
 
-    async translate(text: string, from: string, to: string): Promise<string> {
-        if (from === to) return Promise.resolve(text);  //if the source and target languages are the same, we return the input text as a result immediately
-
-        if(this.loadLanguagesTask != null) {
-            await this.loadLanguagesTask.promise;   //if a loadLanguagesTask is running we wait for it to finish before starting the translation
+    private enqueue<T>(kind: Kind, operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
+        // Supersede synchronously. 
+        // A new translate cancels pending translates.
+        // A new load cancels pending translates AND pending loads.
+        for (const task of this.pendingTasksInfos) {
+            if (kind === "load" || task.kind === "translate") task.controller.abort();
         }
 
-        let abortController = new AbortController();
+        const entry = { kind, controller: new AbortController() };
+        this.pendingTasksInfos.add(entry);
 
-        const promise = this.translator.translate(
-            { from, to, text, html: false, qualityScores: false }, { signal: abortController.signal }
-        );
+        // Queue behind whatever is already running, ignoring its outcome.
+        const run = () => {
+            return operation(entry.controller.signal).finally(() => this.pendingTasksInfos.delete(entry));
+        };
+        const promise = this.lastQueuedTask.then(run, run);
 
-        this.translateTask = { controller: abortController, promise: promise };
-
-        const response = await promise;
-
-        this.translateTask = null;  //the task is finished, so we remove its abortController
-        return response.target.text;
-    }
-
-    async loadLanguagePairResources(srcLang: string, tgtLang: string): Promise<void> {
-        // we eventually interrupt the previous loadLanguagePairResources and translate tasks and wait their catch of the abort.
-        if (this.loadLanguagesTask) {
-            this.loadLanguagesTask.controller.abort();  //we interrupt the previous loadLanguagePairResources if it's still running
-            // Wait for the loadLanguagePairResources task to catch the abort.
-            try {
-                await this.loadLanguagesTask.promise;
-            } catch (e) {
-                // Ignore the expected AbortError thrown by the cancelled task
-            }
-            this.loadLanguagesTask = null;  //the task is canceled, so we remove its abortController
-        }
-        if (this.translateTask) {
-            this.translateTask.controller.abort();  //we interrupt the translate if it's still running
-            // Wait for the translate task to catch the abort.
-            try {
-                await this.translateTask.promise;
-            } catch (e) {
-                // Ignore the expected AbortError thrown by the cancelled task
-            }
-            this.translateTask = null;  //the task is canceled, so we remove its abortController
-        }
-
-        // we start the loading of the language pair resources
-        let abortController = new AbortController();
-
-        const promise = this.performLoadLanguagePairResources(srcLang, tgtLang, abortController.signal);
-
-        this.loadLanguagesTask = { controller: abortController, promise: promise };
+        // The chain itself must never reject, or it poisons every later task.
+        this.lastQueuedTask = promise.catch(() => {});
         return promise;
     }
 
-    private async performLoadLanguagePairResources (srcLang: string, tgtLang: string, signal: AbortSignal) : Promise<void> {
+    translate(text: string, from: string, to: string): Promise<string> {
+        if (from === to) return Promise.resolve(text);   //if the source and target languages are the same, we return the input text as a result immediately
+
+        return this.enqueue("translate", (signal) => this.performTranslate(text, from, to, signal));
+    }
+
+    loadLanguagePairResources(srcLang: string, tgtLang: string): Promise<void> {
+        return this.enqueue("load", (signal) => this.performLoadLanguagePairResources(srcLang, tgtLang, signal));
+    }
+
+
+    private async performTranslate(text: string, from: string, to: string, signal: AbortSignal): Promise<string> {
+        signal.throwIfAborted();
+        // Execute translation
+        const response = await this.translator.translate(
+            { from, to, text, html: false, qualityScores: false },
+            { signal: signal }
+        );
+        return response.target.text;
+    }
+
+    private async performLoadLanguagePairResources(srcLang: string, tgtLang: string, signal: AbortSignal): Promise<void> {
+        signal.throwIfAborted();
         let worker = await this.translator.worker;
+        signal.throwIfAborted();
+
+        // we define the new needed language pairs
+        let pairs: LanguagePair[] = []
+        if(srcLang != "en"){
+            pairs = pairs.concat({ from: srcLang, to: "en" }, { from: "en", to: srcLang });
+        }
+        if(tgtLang != "en") {
+            pairs = pairs.concat({ from: tgtLang, to: "en" }, { from: "en", to: tgtLang });
+        }
+
         // we eventually remove the old models (we remove all the models that aren't use for this new language pair)
         for (let key of this.languageResourcesManager.buffers.keys()) {
             let langs: LanguagePair = JSON.parse(key);
-            if ((srcLang != "en" && langs.from != srcLang && langs.to != srcLang) && (tgtLang != "en" && langs.from != tgtLang && langs.to != tgtLang)) {
+            if (!pairs.some(p => p.from === langs.from && p.to === langs.to)) {
                 // old model remove for the languageResourcesManager worker  (wasm)
                 await worker.exports.freeTranslationModel(langs);
                 signal.throwIfAborted();
@@ -98,10 +111,8 @@ export class Translator {
             }
         }
         // we load the new models  (sequential on purpose: two allocations at once spikes the wasm heap)
-        let pairs = [{ from: srcLang, to: "en" }, { from: "en", to: srcLang }, { from: tgtLang, to: "en" }, { from: "en", to: tgtLang }]
         let model: TranslationModel;
         for (let pair of pairs) {
-            if (pair.to == "en" && pair.from == "en") continue;  //if the srcLang or tgtLang (or both) are "en", we skip the load
             // load for languageResourcesManager  (js)
             model = await this.languageResourcesManager.getTranslationModel(pair);  //we do not pass the loadLanguagesAbortController here because an internal interruption, without deletion of the buffer can cause problems, so we interrupt this operation only above, in the removal of unused models
             signal.throwIfAborted();
@@ -109,7 +120,6 @@ export class Translator {
             if (!await worker.exports.hasTranslationModel(pair)) await worker.exports.loadTranslationModel(pair, model);
             signal.throwIfAborted();
         }
-        this.loadLanguagesTask = null;   //the task is finished, so we remove its abortController
     }
 
     /**
