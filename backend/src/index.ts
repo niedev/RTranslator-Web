@@ -29,7 +29,7 @@ if (isProduction) {
    app.use(express.static(path.join(process.cwd(), 'frontend-dist')));
 
    // Fallback for every get endpoint that doesn't match the others defined above (including the ones derived from express.static) (SPA)
-   app.get('*', (req, res) => {
+   app.get('/{*splat}', (req, res) => {
       res.sendFile(path.join(process.cwd(), 'frontend-dist/index.html'));
    });
 }
