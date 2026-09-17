@@ -43,3 +43,13 @@ EXPOSE 3847
 
 # Start the Node.js server
 CMD ["node", "dist/index.js"]
+
+LABEL org.opencontainers.image.source="https://github.com/niedev/RTranslator-Web"
+LABEL org.opencontainers.image.title="RTranslator Web"
+LABEL org.opencontainers.image.description="Self-hosted RTranslator web application"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+
+ARG VERSION
+ARG BUILD_DATE
+LABEL org.opencontainers.image.version=$VERSION
+LABEL org.opencontainers.image.created=$BUILD_DATE
