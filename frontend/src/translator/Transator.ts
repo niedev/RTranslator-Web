@@ -1,4 +1,4 @@
-import { LatencyOptimisedTranslator, type LanguagePair, type TranslationModel, type TranslatorOptions, type TranslationResponse } from "@browsermt/bergamot-translator/translator.js";
+import { LatencyOptimisedTranslator, type LanguagePair, type TranslationModel, type TranslatorOptions } from "@browsermt/bergamot-translator/translator.js";
 import { LanguageResourceManager } from "@src/translator/LanguageResourceManager"
 
 type Kind = "translate" | "load";

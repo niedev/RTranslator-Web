@@ -1,4 +1,3 @@
-import React from 'react'
 import logo from '@src/assets/logo.png'
 import './Toolbar.css'
 

@@ -74,7 +74,7 @@ function App() {
 
    //functions
    function copyToClipboard(text: string) {
-      navigator.clipboard.writeText(outputText);
+      navigator.clipboard.writeText(text);
       toast("Copied to clipboard!", {
          icon: <img width={20} src={copyIcon} alt={""} />,
       });
@@ -83,7 +83,7 @@ function App() {
    async function translate(text: string) {
       setIsTranslating(true);
       try {
-         setOutputText(await global.translate(inputText));
+         setOutputText(await global.translate(text));
       } catch (e) {
          console.log(e);
       }

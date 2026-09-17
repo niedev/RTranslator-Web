@@ -1,4 +1,4 @@
-import { TranslatorBacking, type ModelFilesInfo, type LanguagePair, type TranslationModel, type TranslatorOptions, CancelledError, type StringifiedLanguagePair } from "@browsermt/bergamot-translator/translator.js";
+import { TranslatorBacking, type ModelFilesInfo, type LanguagePair, type TranslationModel, type TranslatorOptions, type StringifiedLanguagePair } from "@browsermt/bergamot-translator/translator.js";
 import { listDirectoryChildren } from "@src/file-system/file-system-tools"
 
 export class LanguageResourceManager extends TranslatorBacking {
@@ -95,7 +95,7 @@ export class LanguageResourceManager extends TranslatorBacking {
             this.buffers.set(key, promise);
 
             // But if loading fails, remove the promise again so we can try again later
-            promise.catch(err => this.buffers.delete(key))
+            promise.catch(() => this.buffers.delete(key))
         }
 
         return this.buffers.get(key) ?? {} as any;

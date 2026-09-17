@@ -2,7 +2,7 @@ import type { DownloadInfo } from "@src/downloader/DownloadInfo"
 import { Translator } from "@src/translator/Transator"
 import { DownloadManager } from "@src/downloader/DownloadManager"
 import { XMLParser } from 'fast-xml-parser';
-import { listDirectoryChildren, listDirectoryChildrenReady } from "./file-system/file-system-tools";
+import { listDirectoryChildrenReady } from "./file-system/file-system-tools";
 import mozillaLanguagesXml from './assets/languages/mozilla_supported_languages.xml?raw';
 
 export class Global {
@@ -223,7 +223,7 @@ export class Global {
      * @returns An empty Promise that will be resolved when the download has been completed successfully.
      * @throws An error of type DOMException and name == "AbortError" if the download has been interrupted with cancelModelDownload, other errors if the download fails.
      */
-    public async downloadModel(lang: string, onProgress?: (progress: number, isUnzipping: boolean) => void ): Promise<void> {
+    public async downloadModel(lang: string ): Promise<void> {
         let modelDownloadIndex = this.getMozillaModels().findIndex((item) => item.name == lang);
         let modelDownload = this.getMozillaModels()[modelDownloadIndex];
         if(modelDownload && !modelDownload.downloading && !modelDownload.downloadCompleted){
