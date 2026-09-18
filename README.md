@@ -12,12 +12,43 @@ The issue is that using HTTPS requires a certificate issued by a CA.
 
 Therefore, for self-hosting, we have only the following options:
 
-1) Do not use HTTPS and access the site only from the machine where it is installed (localhost:3000).
+1) Do not use HTTPS and access the site only from the machine where it is installed (localhost:3847).
 2) Use HTTPS locally with Caddy, but install the Caddy CA in the browsers (or OS) of all external local devices intended to connect to the site.
 3) Use Caddy as a custom reverse proxy to access the site via HTTPS both locally and from the internet without needing to install the CA in browsers (this requires the user to have a domain and configure DDNS (or have a static public IP) as well as the router and firewall).
+
+```
+                    RTranslator
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+      BEGINNER                       ADVANCED
+          │                             │
+   LAN / local use               Real domain name
+          │                             │
+    ┌─────┴─────┐                 Caddy + public CA
+    │           │                       │
+same PC     other devices               │
+    │           │                       │
+localhost   Caddy local CA              │
+    │           │                       │
+ no cert    trust CA once            automatic
+ setup      per client              browser trust
+```
+
 <br/><br/>
 
 ### 1. Localhost-only installation:
+
+```
+     localhost:3847
+          │               
+          │ HTTP                              
+          ▼                                          
+┌───────────────────┐                                
+│ RTranslator       │
+│ React + Node.js   │
+└───────────────────┘
+```
 
 This is the simplest installation method. With this installation method, you will be able to use the website only from the same PC you installed the server on.
 To install the website with this method, follow these instructions:
@@ -45,6 +76,27 @@ And to restart it:
 
 ### 2. LAN-only installation:
 
+```
+Your local network                            localhost:3847
+        │                                            |
+        │ HTTPS                                      |
+        │                                            |
+        ▼                                            |
+┌───────────────────┐                                |
+│ Caddy             │                                |
+│ ports 80 / 443    │                                | 
+│ local HTTPS       │                                | HTTP :3847
+└─────────┬─────────┘                                |
+          │                                          |
+          │ Docker internal network                  |
+          │ HTTP :3847                               |
+          ▼                                          |
+┌───────────────────┐                                |
+│ RTranslator       │<-------------------------------/
+│ React + Node.js   │
+└───────────────────┘
+```
+
 This installation method is for pretty experienced users. With this installation method, you will be able to use the website from the same PC you installed the server on or on other devices in the same LAN.
 To install the website with this method, follow these instructions:
 
@@ -64,7 +116,19 @@ From within the extracted folder, run this command:
 
 Docker will now perform these operations:
 
-<img width="317" height="229" alt="image" src="https://github.com/user-attachments/assets/47ad92c4-ad78-4a03-8921-104abd37c892" />
+```
+1. Download the RTranslator image
+             ↓
+2. Download Caddy
+             ↓
+3. Start RTranslator on internal port 3847
+             ↓
+4. Start Caddy
+             ↓
+5. Generate the local HTTPS CA
+             ↓
+6. Generate a certificate for your LAN IP
+```
 
 And the server will be up and running.
 
@@ -77,7 +141,14 @@ Now, you must generate the CA root certificate using this command:
 
 **Note:** Caddy generates a root certificate (for its CA) that is valid only for the public key of the local Caddy server instance (it does not validate other public keys). Therefore, it cannot be shared between different installations.
 
-<img width="211" height="127" alt="image" src="https://github.com/user-attachments/assets/123e1828-cf95-416f-878f-d9e712fbab53" />
+```
+RTranslator-Web/
+├── rtranslator-local-ca.crt
+├── .env
+├── compose.yaml
+├── Caddyfile
+└── ...
+```
 
 Now, you must install the certificate on the operating system or browser of the client devices that need to access the site locally.
 
