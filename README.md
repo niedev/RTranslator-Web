@@ -164,6 +164,14 @@ RTranslator-Web/
 Now, you must install the certificate on the operating system or browser of the client devices that need to access the site locally.
 
 Using the browser on the devices with the certificate installed, you can now open the address `https://<IP_ADDRESS>` and use the site.
+
+After this initial setup, simply use the following command (from the extracted folder) to stop the server:
+
+`docker compose down`
+
+And to restart it:
+
+`docker compose up -d`
 <br/><br/>
 
 
