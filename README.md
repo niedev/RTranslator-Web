@@ -1,5 +1,16 @@
 # RTranslator-Web
 
+A self-hosted web version of [RTranslator](https://github.com/niedev/RTranslator) for text translation using [Mozilla models](https://github.com/mozilla/translations). This website is 100% open source.
+
+<img width="1717" height="789" alt="image" src="https://github.com/user-attachments/assets/2c48bd27-9ec3-408e-aac6-9f193711c84b" />
+
+The main feature of this web app is that the translation models—and the entire logic in general—run locally within the browser (frontend).
+
+The server (backend) performs only two tasks: serving the site and providing the translation models for each language (which are stored in the browser's local storage once downloaded).
+
+This allows the site to be hosted at minimal cost (meaning these costs will not be passed on to users) and, above all, ensures total user privacy; just like with RTranslator, everything (except for the model downloads) runs directly on the device where the app is being used.
+
+Plus, thanks to this, after the site is loaded and the required models are downloaded, the site can work offline.
 <br/><br/>
 
 ## Installation
